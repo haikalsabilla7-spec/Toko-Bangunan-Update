@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-surface-sunken text-ink font-sans antialiased;
+    font-feature-settings: "tnum" 1, "cv01" 1;
+  }
+  h1, h2, h3, h4, .font-grotesk {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  /* Angka rupiah rata kanan & tabular */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Fokus terlihat jelas untuk alur keyboard/scanner */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent/60 ring-offset-1 ring-offset-surface;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-md shadow-subtle;
+  }
+  .input-base {
+    @apply w-full h-11 px-3 rounded-md border border-line-strong bg-surface text-ink
+      placeholder:text-ink-muted focus:border-accent focus:ring-2 focus:ring-accent/30
+      disabled:bg-surface-sunken disabled:text-ink-muted transition-colors;
+  }
+  .th {
+    @apply text-2xs font-semibold uppercase tracking-wide text-ink-muted px-3 py-2 text-left;
+  }
+  .td {
+    @apply px-3 py-2 text-sm border-t border-line;
+  }
+}
+
+/* Struk thermal 58mm & label barcode: styling khusus cetak */
+/* Label barcode: ukuran tetap agar cetak tajam & tidak terpotong */
+.barcode-label {
+  width: 50mm;
+  padding: 2mm;
+  text-align: center;
+  background: #fff;
+  color: #000;
+}
+.barcode-label__nama {
+  margin: 0 0 1mm;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.barcode-label__code {
+  display: block;
+  width: 46mm;
+  height: auto;
+  margin: 0 auto;
+}
+.barcode-label__harga {
+  margin: 1mm 0 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Struk thermal 58mm & label barcode: styling khusus cetak */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; }
+  .print-area canvas,
+  .print-area img { max-width: 100%; height: auto; }
+  .no-print { display: none !important; }
+}
+
+/* Ukuran halaman cetak: ikuti konten + margin kecil agar tidak terpotong */
+@page {
+  size: auto;
+  margin: 4mm;
+}
