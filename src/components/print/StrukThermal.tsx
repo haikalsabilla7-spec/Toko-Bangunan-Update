@@ -1,4 +1,5 @@
 import { rupiah, tanggalJam } from "@/lib/format"
+import { TOKO } from "@/lib/toko"
 
 export interface StrukItem {
   nama: string
@@ -25,37 +26,47 @@ export interface StrukData {
  * Dibungkus .print-area agar hanya bagian ini yang tercetak (lihat index.css).
  */
 export function StrukThermal({ data }: { data: StrukData }) {
+  const totalQty = data.items.reduce((s, i) => s + i.qty, 0)
+  const footerLines = TOKO.footer.split("|")
   return (
     <div className="print-area mx-auto w-[58mm] bg-white p-2 font-mono text-[10px] leading-tight text-black">
+      {/* Kop toko */}
       <div className="text-center">
-        <p className="text-[12px] font-bold">TOKO BANGUNAN</p>
-        <p>Jl. Material Jaya No. 12</p>
-        <p>Telp 0800-000-000</p>
+        <p className="text-[13px] font-bold uppercase">{TOKO.nama}</p>
+        <p>{TOKO.alamat}</p>
+        <p>Telp {TOKO.telp}</p>
       </div>
+
       <Div />
-      <div className="flex justify-between">
-        <span>{data.no_transaksi}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>{tanggalJam(data.tanggal)}</span>
-      </div>
-      <div className="flex justify-between">
-        <span>Kasir: {data.kasir}</span>
-      </div>
+      {/* Meta transaksi */}
+      <Row label="No" value={data.no_transaksi} />
+      <Row label="Tgl" value={tanggalJam(data.tanggal)} />
+      <Row label="Kasir" value={data.kasir} />
+      {data.metode_bayar === "utang" && data.nama_pelanggan && (
+        <Row label="Plgn" value={data.nama_pelanggan} />
+      )}
+
       <Div />
+      {/* Item */}
       {data.items.map((it, i) => (
         <div key={i} className="mb-1">
           <p className="font-semibold">{it.nama}</p>
           <div className="flex justify-between">
             <span>
-              {it.qty} {it.satuan} x {rupiah(it.harga_jual)}
+              {angkaRingkas(it.qty)} {it.satuan} x {rupiah(it.harga_jual)}
             </span>
             <span>{rupiah(it.subtotal)}</span>
           </div>
         </div>
       ))}
+
       <Div />
-      <div className="flex justify-between text-[12px] font-bold">
+      {/* Ringkasan */}
+      <div className="flex justify-between">
+        <span>Total item</span>
+        <span>{angkaRingkas(totalQty)}</span>
+      </div>
+      <div className="flex justify-between text-[13px] font-bold">
         <span>TOTAL</span>
         <span>{rupiah(data.total)}</span>
       </div>
@@ -63,6 +74,7 @@ export function StrukThermal({ data }: { data: StrukData }) {
         <span>Metode</span>
         <span className="uppercase">{data.metode_bayar}</span>
       </div>
+
       {data.metode_bayar === "tunai" && data.bayar != null && (
         <>
           <div className="flex justify-between">
@@ -76,17 +88,33 @@ export function StrukThermal({ data }: { data: StrukData }) {
         </>
       )}
       {data.metode_bayar === "utang" && (
-        <div className="flex justify-between">
-          <span>Pelanggan</span>
-          <span>{data.nama_pelanggan}</span>
+        <div className="mt-1 flex justify-between font-semibold">
+          <span>SISA UTANG</span>
+          <span>{rupiah(data.total)}</span>
         </div>
       )}
+
       <Div />
-      <p className="text-center">Terima kasih telah berbelanja</p>
-      <p className="text-center">Barang yang sudah dibeli</p>
-      <p className="text-center">dapat ditukar max 1x24 jam</p>
+      {footerLines.map((l: string, i: number) => (
+        <p key={i} className="text-center">{l}</p>
+      ))}
+      <p className="mt-1 text-center text-[9px]">-- Struk ini bukti pembayaran sah --</p>
     </div>
   )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-2">
+      <span className="shrink-0 text-black/70">{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  )
+}
+
+// Tampilkan qty tanpa ",00" bila bulat (mis. 3), tapi tetap dukung pecahan (mis. 2,5 kg)
+function angkaRingkas(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toLocaleString("id-ID")
 }
 
 function Div() {
