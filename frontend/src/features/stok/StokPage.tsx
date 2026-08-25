@@ -13,6 +13,7 @@ import { angka, tanggalJam } from "@/lib/format"
 import { BATAS_STOK_MENIPIS } from "@/types/database"
 import { useBarangList } from "@/features/barang/api"
 import { useRiwayatStok, useCatatStokMasuk, useCatatPenyesuaian } from "./api"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
 export default function StokPage() {
   const toast = useToast()
@@ -23,6 +24,7 @@ export default function StokPage() {
 
   const [masukOpen, setMasukOpen] = useState(false)
   const [opnameOpen, setOpnameOpen] = useState(false)
+  const [konfirmasiOpname, setKonfirmasiOpname] = useState(false)
 
   // form stok masuk
   const [mBarang, setMBarang] = useState("")
@@ -69,6 +71,7 @@ export default function StokPage() {
         alasan: oAlasan.trim() || "Penyesuaian stok",
       })
       toast("Penyesuaian stok disimpan", "success")
+      setKonfirmasiOpname(false)
       setOpnameOpen(false)
       setOBarang(""); setOFisik(""); setOAlasan("Stok opname")
     } catch {
@@ -171,7 +174,7 @@ export default function StokPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setMasukOpen(false)}>Batal</Button>
-            <Button onClick={submitMasuk} loading={stokMasuk.isPending} disabled={!mBarang || !mQty}>
+            <Button onClick={() => setKonfirmasiOpname(true)} disabled={!oBarang || oFisik === ""}>
               Simpan
             </Button>
           </>
@@ -196,7 +199,7 @@ export default function StokPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setOpnameOpen(false)}>Batal</Button>
-            <Button onClick={submitOpname} loading={penyesuaian.isPending} disabled={!oBarang || oFisik === ""}>
+            <Button onClick={submitMasuk} loading={stokMasuk.isPending} disabled={!mBarang || !mQty}>
               Simpan
             </Button>
           </>
@@ -222,6 +225,22 @@ export default function StokPage() {
           <Input label="Alasan" value={oAlasan} onChange={(e) => setOAlasan(e.target.value)} placeholder="mis. barang rusak / selisih hitung" />
         </div>
       </Modal>
+
+          <ConfirmDialog
+            open={konfirmasiOpname}
+            onClose={() => setKonfirmasiOpname(false)}
+            onConfirm={submitOpname}
+            title="Konfirmasi Penyesuaian Stok"
+            danger
+            loading={penyesuaian.isPending}
+            confirmLabel="Ya, Sesuaikan"
+            message={
+              <>
+                Stok <b>{barangTerpilihOpname?.nama}</b> akan diubah dengan selisih{" "}
+                <b>{selisih > 0 ? "+" : ""}{selisih}</b>. Lanjutkan?
+              </>
+            }
+          />
     </div>
   )
 }

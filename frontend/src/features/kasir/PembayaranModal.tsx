@@ -121,7 +121,17 @@ export function PembayaranModal({
       footer={
         <>
           <Button variant="outline" onClick={onClose} disabled={saving}>Batal</Button>
-          <Button onClick={handleConfirm} loading={saving} disabled={!valid || saving}>
+          <Button
+            onClick={() => {
+              if (metode === "utang") {
+                const nama = namaPelanggan.trim() || "Pelanggan"
+                if (!confirm(`Simpan sebagai UTANG atas nama "${nama}"? Piutang akan otomatis dibuat.`)) return
+              }
+              handleConfirm()
+            }}
+            loading={saving}
+            disabled={!valid || saving}
+          >
             Simpan Transaksi
           </Button>
         </>

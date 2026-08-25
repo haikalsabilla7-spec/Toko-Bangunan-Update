@@ -12,6 +12,7 @@ import { useBarangList, useHapusBarang, useKategori } from "./api"
 import { BarangForm } from "./BarangForm"
 import { ImportCsvModal } from "./ImportCsvModal"
 import { LabelPrintModal } from "./LabelPrintModal"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 
 type SortKey = "nama" | "stok" | "harga_jual"
 
@@ -31,6 +32,7 @@ export default function BarangPage() {
   const [editing, setEditing] = useState<BarangWithKategori | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [labelBarang, setLabelBarang] = useState<BarangWithKategori | null>(null)
+  const [hapusTarget, setHapusTarget] = useState<BarangWithKategori | null>(null)
 
   const rows = useMemo(() => {
     let list = data ?? []
@@ -61,13 +63,15 @@ export default function BarangPage() {
     }
   }
 
-  async function handleHapus(b: BarangWithKategori) {
-    if (!confirm(`Hapus \"${b.nama}\"? Tindakan ini tidak bisa dibatalkan.`)) return
+    async function konfirmasiHapus() {
+    if (!hapusTarget) return
     try {
-      await hapus.mutateAsync(b.id)
+      await hapus.mutateAsync(hapusTarget.id)
       toast("Barang dihapus", "success")
     } catch {
       toast("Gagal menghapus. Hanya pemilik yang boleh hapus data master.", "error")
+    } finally {
+      setHapusTarget(null)
     }
   }
 
@@ -184,7 +188,7 @@ export default function BarangPage() {
                             <Pencil className="h-4 w-4" />
                           </IconBtn>
                           {isPemilik && (
-                            <IconBtn title="Hapus" danger onClick={() => handleHapus(b)}>
+                            <IconBtn title="Hapus" danger onClick={() => setHapusTarget(b)}>
                               <Trash2 className="h-4 w-4" />
                             </IconBtn>
                           )}
@@ -198,6 +202,22 @@ export default function BarangPage() {
           )}
         </div>
       </div>
+
+            <ConfirmDialog
+        open={!!hapusTarget}
+        onClose={() => setHapusTarget(null)}
+        onConfirm={konfirmasiHapus}
+        title="Hapus Barang"
+        danger
+        loading={hapus.isPending}
+        confirmLabel="Ya, Hapus"
+        message={
+          <>
+            Yakin ingin menghapus <b>{hapusTarget?.nama}</b>? Tindakan ini tidak bisa
+            dibatalkan.
+          </>
+        }
+      />
 
       <BarangForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
       <ImportCsvModal open={importOpen} onClose={() => setImportOpen(false)} />

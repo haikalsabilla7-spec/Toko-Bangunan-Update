@@ -66,7 +66,10 @@ export function ImportCsvModal({ open, onClose }: { open: boolean; onClose: () =
             <FileDown className="h-4 w-4" /> Unduh Template
           </Button>
           <Button
-            onClick={prosesImport}
+            onClick={() => {
+              if (!confirm(`Import ${valid.length} barang? Barang dengan kode yang sama akan diperbarui/ditimpa.`)) return
+              prosesImport()
+            }}
             loading={importBarang.isPending}
             disabled={valid.length === 0}
           >

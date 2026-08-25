@@ -48,7 +48,7 @@ export function BarangForm({
   })
 
   useEffect(() => {
-    if (open) {
+    if (open) { 
       reset(
         editing
           ? {

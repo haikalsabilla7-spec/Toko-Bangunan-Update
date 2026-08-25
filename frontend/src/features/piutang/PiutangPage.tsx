@@ -147,7 +147,16 @@ function DetailPiutangModal({ piutang, onClose, onSaved }: { piutang: Piutang; o
         piutang.status === "belum_lunas" ? (
           <>
             <Button variant="outline" onClick={onClose}>Tutup</Button>
-            <Button onClick={submit} loading={bayar.isPending} disabled={!nominal}>Catat Pembayaran</Button>
+            <Button
+                onClick={() => {
+                  if (!confirm(`Catat pembayaran sebesar Rp${nominal} dari ${piutang.nama_pelanggan}?`)) return
+                  submit()
+                }}
+              loading={bayar.isPending}
+              disabled={!nominal}
+            >
+              Catat Pembayaran
+            </Button>
           </>
         ) : (
           <Button variant="outline" onClick={onClose}>Tutup</Button>
