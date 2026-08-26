@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom"
+import { createHashRouter, Navigate } from "react-router-dom"
 import { lazy, Suspense, type ReactNode } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { RequireAuth, RequirePemilik } from "@/features/auth/guards"
@@ -20,7 +20,7 @@ function L(node: ReactNode) {
   return <Suspense fallback={<FullScreenLoader />}>{node}</Suspense>
 }
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   { path: "/login", element: L(<LoginPage />) },
   {
     path: "/",
