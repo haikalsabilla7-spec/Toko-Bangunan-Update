@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Plus, Search, Pencil, Trash2, Barcode, Upload, ArrowUpDown } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, Trash, Barcode, Upload, ArrowUpDown } from "lucide-react"
 import { PageHeader } from "@/components/PageHeader"
 import { Button } from "@/components/ui/Button"
 import { InlineLoader } from "@/components/ui/Loader"
@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/Toast"
 import { rupiah, angka } from "@/lib/format"
 import { BATAS_STOK_MENIPIS, type BarangWithKategori } from "@/types/database"
 import { useAuth } from "@/features/auth/AuthProvider"
-import { useBarangList, useHapusBarang, useKategori } from "./api"
+import { useBarangList, useHapusBarang, useHapusSemuaBarang, useKategori } from "./api"
 import { BarangForm } from "./BarangForm"
 import { ImportCsvModal } from "./ImportCsvModal"
 import { LabelPrintModal } from "./LabelPrintModal"
@@ -33,6 +33,8 @@ export default function BarangPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [labelBarang, setLabelBarang] = useState<BarangWithKategori | null>(null)
   const [hapusTarget, setHapusTarget] = useState<BarangWithKategori | null>(null)
+  const hapusSemua = useHapusSemuaBarang()
+  const [hapusSemuaOpen, setHapusSemuaOpen] = useState(false)
 
   const rows = useMemo(() => {
     let list = data ?? []
@@ -75,26 +77,45 @@ export default function BarangPage() {
     }
   }
 
+  async function konfirmasiHapusSemua() {
+  try {
+    const res = await hapusSemua.mutateAsync()
+    toast(`${res.deleted} barang berhasil dihapus`, "success")
+  } catch (e) {
+    toast(
+      e instanceof Error ? e.message : "Gagal menghapus semua barang",
+      "error",
+    )
+  } finally {
+    setHapusSemuaOpen(false)
+  }
+}
+
   return (
     <div>
       <PageHeader
         title="Master Barang"
         description={`${data?.length ?? 0} jenis barang terdaftar`}
         actions={
-          <>
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload className="h-4 w-4" /> Import CSV
+        <>
+          {isPemilik && (
+            <Button variant="danger" onClick={() => setHapusSemuaOpen(true)}>
+              <Trash className="h-4 w-4" /> Hapus Semua
             </Button>
-            <Button
-              onClick={() => {
-                setEditing(null)
-                setFormOpen(true)
-              }}
-            >
-              <Plus className="h-4 w-4" /> Tambah Barang
-            </Button>
-          </>
-        }
+          )}
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4" /> Import CSV
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setFormOpen(true)
+            }}
+          >
+            <Plus className="h-4 w-4" /> Tambah Barang
+          </Button>
+        </>
+      }
       />
 
       <div className="space-y-3 p-4 sm:p-6">
@@ -203,7 +224,8 @@ export default function BarangPage() {
         </div>
       </div>
 
-            <ConfirmDialog
+      {/* Dialog 1: hapus SATUAN — ini yang hilang, wajib ada */}
+      <ConfirmDialog
         open={!!hapusTarget}
         onClose={() => setHapusTarget(null)}
         onConfirm={konfirmasiHapus}
@@ -218,6 +240,27 @@ export default function BarangPage() {
           </>
         }
       />
+
+      {/* Dialog 2: hapus SEMUA */}
+      <ConfirmDialog
+        open={hapusSemuaOpen}
+        onClose={() => setHapusSemuaOpen(false)}
+        onConfirm={konfirmasiHapusSemua}
+        title="Hapus Semua Barang"
+        danger
+        loading={hapusSemua.isPending}
+        confirmLabel="Ya, Hapus Semua"
+        message={
+          <>
+            Yakin ingin menghapus <b>SELURUH ({data?.length ?? 0})</b> barang?
+            Tindakan ini tidak bisa dibatalkan.
+          </>
+        }
+      />
+
+      <BarangForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
+      <ImportCsvModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <LabelPrintModal open={!!labelBarang} onClose={() => setLabelBarang(null)} barang={labelBarang} />
 
       <BarangForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
       <ImportCsvModal open={importOpen} onClose={() => setImportOpen(false)} />

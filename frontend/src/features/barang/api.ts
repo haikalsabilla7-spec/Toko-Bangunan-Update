@@ -56,6 +56,14 @@ export function useHapusBarang() {
 	})
 }
 
+export function useHapusSemuaBarang() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api.del<{ ok: boolean; deleted: number }>("/barang"),
+		onSuccess: () => qc.invalidateQueries({ queryKey: barangKeys.all }),
+	})
+}
+
 /** Import massal dari CSV (array baris tervalidasi). */
 export function useImportBarang() {
 	const qc = useQueryClient()
