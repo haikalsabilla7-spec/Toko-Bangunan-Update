@@ -37,12 +37,12 @@ function mapBarang(b: BarangRow) {
 	}
 }
 
-const SELECT_BARANG = `
-	select b.id, b.kode, b.nama, b.kategori_id, b.satuan, b.harga_beli,
-	       b.harga_jual, b.stok, b.barcode, b.created_at,
-	       k.id as k_id, k.nama as k_nama
-	from barang b
-	left join kategori k on k.id = b.kategori_id`
+	const SELECT_BARANG = `
+		select b.id, b.kode, b.nama, b.kategori_id, b.satuan, b.harga_beli,
+			b.harga_jual, b.stok, b.barcode, b.created_at,
+			k.id as k_id, k.nama as k_nama
+		from barang b
+		left join kategori k on k.id = b.kategori_id`
 
 // Daftar semua barang (+ kategori). Bisa dibaca semua user login.
 barangRouter.get(
