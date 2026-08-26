@@ -4,18 +4,27 @@ import { Menu, LogOut, HardHat } from "lucide-react"
 import { NAV_ITEMS } from "./nav"
 import { useAuth } from "@/features/auth/AuthProvider"
 import { Badge } from "@/components/ui/Badge"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
 import { cn } from "@/lib/cn"
 
 export function AppLayout() {
   const { profil, isPemilik, signOut } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [keluar, setKeluar] = useState(false)
 
   const items = NAV_ITEMS.filter((i) => !i.pemilikOnly || isPemilik)
 
-  async function handleLogout() {
-    await signOut()
-    navigate("/login", { replace: true })
+  async function konfirmasiLogout() {
+    setKeluar(true)
+    try {
+      await signOut()
+      navigate("/login", { replace: true })
+    } finally {
+      setKeluar(false)
+      setLogoutOpen(false)
+    }
   }
 
   return (
@@ -67,7 +76,7 @@ export function AppLayout() {
             <Badge tone={isPemilik ? "accent" : "neutral"}>{profil?.role ?? "kasir"}</Badge>
           </div>
           <button
-            onClick={handleLogout}
+            onClick={() => setLogoutOpen(true)}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
           >
             <LogOut className="h-4 w-4" /> Keluar
@@ -80,6 +89,7 @@ export function AppLayout() {
       )}
 
       {/* Konten */}
+            {/* Konten */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center gap-3 border-b border-line bg-surface px-4 lg:hidden">
           <button onClick={() => setOpen(true)} className="rounded-md p-2 hover:bg-surface-sunken" aria-label="Menu">
@@ -91,6 +101,22 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      <ConfirmDialog
+        open={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={konfirmasiLogout}
+        title="Keluar dari aplikasi?"
+        loading={keluar}
+        confirmLabel="Ya, Keluar"
+        cancelLabel="Batal"
+        message={
+          <>
+            Anda akan keluar dari akun <b>{profil?.nama ?? "ini"}</b>. Pastikan tidak
+            ada transaksi yang belum disimpan.
+          </>
+        }
+      />
     </div>
   )
 }
