@@ -27,12 +27,16 @@ export default function KasirPage() {
   const [bayarOpen, setBayarOpen] = useState(false)
   const [mencari, setMencari] = useState(false)
   const [katAktif, setKatAktif] = useState<string>("")
+  const [batas, setBatas] = useState(24)
+  const [aktifIdx, setAktifIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-focus field scan agar scanner Bluetooth langsung tertangkap.
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  useEffect(() => setBatas(24), [katAktif])
+  useEffect(() => setAktifIdx(0), [query])
 
   // Saran pencarian manual (nama/kode) untuk barang tanpa barcode.
   const saran = useMemo(() => {
@@ -45,18 +49,17 @@ export default function KasirPage() {
           b.kode.toLowerCase().includes(q) ||
           (b.barcode ?? "").includes(q),
       )
-      .slice(0, 8)
+      .slice(0, 12)
   }, [query, semuaBarang])
 
-  // Barang untuk grid tombol cepat (kategori / laris) — untuk barang tanpa barcode.
   const gridBarang = useMemo(() => {
     const list = semuaBarang ?? []
-    if (katAktif === "laris") {
-      const byId = new Map(list.map((b) => [b.id, b]))
-      return larisIds.map((id) => byId.get(id)).filter(Boolean) as typeof list
-    }
-    const out = katAktif ? list.filter((b) => b.kategori_id === katAktif) : list
-    return [...out].sort((a, b) => a.nama.localeCompare(b.nama))
+    const byId = new Map(list.map((b) => [b.id, b]))
+    const laris = larisIds.map((id) => byId.get(id)).filter(Boolean) as typeof list
+
+    if (katAktif === "laris") return laris
+    if (katAktif === "") return laris.length > 0 ? laris : [...list].sort((a, b) => a.nama.localeCompare(b.nama))
+    return [...list.filter((b) => b.kategori_id === katAktif)].sort((a, b) => a.nama.localeCompare(b.nama))
   }, [semuaBarang, katAktif, larisIds])
 
   async function prosesKode(kode: string) {
@@ -95,7 +98,7 @@ export default function KasirPage() {
   function onSubmitScan(e: React.FormEvent) {
     e.preventDefault()
     // Enter dari scanner BT atau ketik manual
-    if (saran.length === 1) pilihSaran(saran[0]!)
+    if (saran.length > 0) pilihSaran(saran[aktifIdx] ?? saran[0]!)
     else prosesKode(query)
   }
 
@@ -111,6 +114,11 @@ export default function KasirPage() {
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (saran.length === 0) return
+                  if (e.key === "ArrowDown") { e.preventDefault(); setAktifIdx((i) => Math.min(i + 1, saran.length - 1)) }
+                  if (e.key === "ArrowUp")   { e.preventDefault(); setAktifIdx((i) => Math.max(i - 1, 0)) }
+                }}
                 placeholder="Scan barcode atau ketik nama/kode barang..."
                 autoComplete="off"
                 className="h-14 w-full rounded-md border border-line-strong bg-surface pl-11 pr-28 text-base focus:border-accent focus:ring-2 focus:ring-accent/30"
@@ -133,11 +141,15 @@ export default function KasirPage() {
           {query.trim().length >= 2 ? (
             saran.length > 0 ? (
               <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
-                {saran.map((b) => (
+                {saran.map((b, idx) => (
                   <li key={b.id}>
                     <button
                       onClick={() => pilihSaran(b)}
-                      className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent-soft"
+                      onMouseEnter={() => setAktifIdx(idx)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent-soft",
+                        idx === aktifIdx && "bg-accent-soft",
+                      )}
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{b.nama}</p>
@@ -179,7 +191,7 @@ export default function KasirPage() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-                  {gridBarang.map((b) => (
+                  {gridBarang.slice(0, batas).map((b) => (
                     <button
                       key={b.id}
                       onClick={() => pilihSaran(b)}
@@ -200,6 +212,14 @@ export default function KasirPage() {
                       </span>
                     </button>
                   ))}
+                  {gridBarang.length > batas && (
+                    <button
+                      onClick={() => setBatas((n) => n + 24)}
+                      className="col-span-full rounded-md border border-line-strong py-2 text-sm font-medium hover:bg-surface-sunken"
+                    >
+                      Muat lebih banyak ({gridBarang.length - batas} lagi)
+                    </button>
+                  )}
                 </div>
               )}
             </div>
