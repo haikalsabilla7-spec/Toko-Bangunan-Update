@@ -116,6 +116,30 @@ barangRouter.put(
 	}),
 )
 
+// Hapus SEMUA barang (pemilik). Hati-hati: tidak bisa dibatalkan.
+barangRouter.delete(
+	"/",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (_req, res) => {
+		try {
+			const rows = await query<{ id: string }>(
+				"delete from barang returning id",
+			)
+			res.json({ ok: true, deleted: rows.length })
+		} catch (err) {
+			// 23503 = foreign_key_violation (barang masih dipakai di transaksi/stok)
+			if ((err as { code?: string }).code === "23503") {
+				throw new ApiError(
+					409,
+					"Tidak bisa menghapus semua barang karena sebagian masih terpakai di transaksi atau riwayat stok.",
+				)
+			}
+			throw err
+		}
+	}),
+)
+
 // Hapus barang (pemilik).
 barangRouter.delete(
 	"/:id",
