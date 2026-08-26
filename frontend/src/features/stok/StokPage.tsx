@@ -80,7 +80,7 @@ export default function StokPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="xl:flex xl:h-full xl:flex-col">
       <PageHeader
         title="Stok"
         description="Catat barang masuk, opname, dan pantau pergerakan stok."
@@ -96,10 +96,10 @@ export default function StokPage() {
         }
       />
 
-      <div className="grid min-h-0 flex-1 grid-rows-2 gap-4 overflow-hidden p-4 sm:p-6 xl:grid-cols-3 xl:grid-rows-1">
-        <Card className="flex min-h-0 flex-col overflow-hidden xl:col-span-2">
+      <div className="grid gap-4 p-4 sm:p-6 xl:min-h-0 xl:flex-1 xl:grid-cols-3 xl:overflow-hidden">
+        <Card className="flex flex-col xl:col-span-2 xl:min-h-0 xl:overflow-hidden">
           <CardHeader title="Riwayat Pergerakan Stok" subtitle="50 aktivitas terakhir" />
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
             {riwayat.isError ? (
               <ErrorState onRetry={() => riwayat.refetch()} />
             ) : riwayat.isLoading ? (
@@ -146,9 +146,9 @@ export default function StokPage() {
           </div>
         </Card>
 
-        <Card className="flex min-h-0 flex-col overflow-hidden">
+        <Card className="flex flex-col xl:min-h-0 xl:overflow-hidden">
           <CardHeader title="Alert Stok Menipis" subtitle={`Ambang batas ≤ ${BATAS_STOK_MENIPIS}`} />
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
             {menipis.length === 0 ? (
               <EmptyState title="Stok aman" description="Tidak ada barang menipis." />
             ) : (
