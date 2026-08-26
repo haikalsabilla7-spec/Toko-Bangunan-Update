@@ -79,24 +79,26 @@ export default function StokPage() {
     }
   }
 
-  return (
-    <div className="xl:flex xl:h-full xl:flex-col">
-      <PageHeader
-        title="Stok"
-        description="Catat barang masuk, opname, dan pantau pergerakan stok."
-        actions={
-          <>
-            <Button variant="outline" onClick={() => setOpnameOpen(true)}>
-              <SlidersHorizontal className="h-4 w-4" /> Penyesuaian
-            </Button>
-            <Button onClick={() => setMasukOpen(true)}>
-              <PackagePlus className="h-4 w-4" /> Stok Masuk
-            </Button>
-          </>
-        }
-      />
+return (
+  <div className="flex h-full flex-col">
+    <PageHeader
+      title="Stok"
+      description="Catat barang masuk, opname, dan pantau pergerakan stok."
+      actions={
+        <>
+          <Button variant="outline" onClick={() => setOpnameOpen(true)}>
+            <SlidersHorizontal className="h-4 w-4" /> Penyesuaian
+          </Button>
+          <Button onClick={() => setMasukOpen(true)}>
+            <PackagePlus className="h-4 w-4" /> Stok Masuk
+          </Button>
+        </>
+      }
+    />
 
-      <div className="grid gap-4 p-4 sm:p-6 xl:min-h-0 xl:flex-1 xl:grid-cols-3 xl:overflow-hidden">
+    {/* Area tengah: SATU scroll di mobile, DUA panel scroll-sendiri di desktop */}
+    <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 xl:overflow-hidden">
+      <div className="grid gap-4 xl:h-full xl:grid-cols-3">
         <Card className="flex flex-col xl:col-span-2 xl:min-h-0 xl:overflow-hidden">
           <CardHeader title="Riwayat Pergerakan Stok" subtitle="50 aktivitas terakhir" />
           <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
@@ -169,95 +171,96 @@ export default function StokPage() {
           </div>
         </Card>
       </div>
-
-      {/* Footer ringkasan */}
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-line bg-surface px-4 py-2.5 text-xs text-ink-muted sm:px-6">
-        <span>{angka(riwayat.data?.length ?? 0)} aktivitas ditampilkan</span>
-        <span className="flex items-center gap-4">
-          <span>{angka(menipis.length)} barang menipis</span>
-          <span className="font-medium text-danger">
-            {angka(menipis.filter((b) => b.stok <= 0).length)} stok habis
-          </span>
-        </span>
-      </footer>
-
-      {/* Modal stok masuk */}
-      <Modal
-        open={masukOpen}
-        onClose={() => setMasukOpen(false)}
-        title="Catat Stok Masuk"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setMasukOpen(false)}>Batal</Button>
-            <Button onClick={() => setKonfirmasiOpname(true)} disabled={!oBarang || oFisik === ""}>
-              Simpan
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <BarangSelect barang={barang ?? []} value={mBarang} onChange={setMBarang} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Qty masuk" type="number" value={mQty} onChange={(e) => setMQty(e.target.value)} />
-            <Input label="Harga beli / unit" type="number" value={mHarga} onChange={(e) => setMHarga(e.target.value)} />
-          </div>
-          <Input label="Supplier" value={mSupplier} onChange={(e) => setMSupplier(e.target.value)} placeholder="mis. PT Sumber Baja" />
-          <p className="text-xs text-ink-muted">Stok barang akan bertambah otomatis setelah disimpan.</p>
-        </div>
-      </Modal>
-
-      {/* Modal opname / penyesuaian */}
-      <Modal
-        open={opnameOpen}
-        onClose={() => setOpnameOpen(false)}
-        title="Penyesuaian Stok (Opname)"
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setOpnameOpen(false)}>Batal</Button>
-            <Button onClick={submitMasuk} loading={stokMasuk.isPending} disabled={!mBarang || !mQty}>
-              Simpan
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <BarangSelect barang={barang ?? []} value={oBarang} onChange={setOBarang} />
-          {barangTerpilihOpname && (
-            <div className="flex items-center justify-between rounded-md bg-surface-sunken px-3 py-2 text-sm">
-              <span className="text-ink-muted">Stok sistem saat ini</span>
-              <span className="num font-semibold">{angka(barangTerpilihOpname.stok)} {barangTerpilihOpname.satuan}</span>
-            </div>
-          )}
-          <Input label="Stok fisik (hasil hitung)" type="number" value={oFisik} onChange={(e) => setOFisik(e.target.value)} />
-          {barangTerpilihOpname && oFisik !== "" && (
-            <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
-              <span className="text-ink-muted">Selisih</span>
-              <span className={selisih === 0 ? "num font-semibold" : selisih > 0 ? "num font-semibold text-ok" : "num font-semibold text-danger"}>
-                {selisih > 0 ? "+" : ""}{angka(selisih)}
-              </span>
-            </div>
-          )}
-          <Input label="Alasan" value={oAlasan} onChange={(e) => setOAlasan(e.target.value)} placeholder="mis. barang rusak / selisih hitung" />
-        </div>
-      </Modal>
-
-          <ConfirmDialog
-            open={konfirmasiOpname}
-            onClose={() => setKonfirmasiOpname(false)}
-            onConfirm={submitOpname}
-            title="Konfirmasi Penyesuaian Stok"
-            danger
-            loading={penyesuaian.isPending}
-            confirmLabel="Ya, Sesuaikan"
-            message={
-              <>
-                Stok <b>{barangTerpilihOpname?.nama}</b> akan diubah dengan selisih{" "}
-                <b>{selisih > 0 ? "+" : ""}{selisih}</b>. Lanjutkan?
-              </>
-            }
-          />
     </div>
-  )
+
+    {/* Footer ringkasan — SELALU menempel di bawah, sama di semua ukuran */}
+    <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line bg-surface px-4 py-2.5 text-xs text-ink-muted sm:px-6">
+      <span>{angka(riwayat.data?.length ?? 0)} aktivitas ditampilkan</span>
+      <span className="flex items-center gap-4">
+        <span>{angka(menipis.length)} barang menipis</span>
+        <span className="font-medium text-danger">
+          {angka(menipis.filter((b) => b.stok <= 0).length)} stok habis
+        </span>
+      </span>
+    </footer>
+
+    {/* Modal stok masuk */}
+    <Modal
+      open={masukOpen}
+      onClose={() => setMasukOpen(false)}
+      title="Catat Stok Masuk"
+      footer={
+        <>
+          <Button variant="outline" onClick={() => setMasukOpen(false)}>Batal</Button>
+          <Button onClick={() => setKonfirmasiOpname(true)} disabled={!oBarang || oFisik === ""}>
+            Simpan
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <BarangSelect barang={barang ?? []} value={mBarang} onChange={setMBarang} />
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Qty masuk" type="number" value={mQty} onChange={(e) => setMQty(e.target.value)} />
+          <Input label="Harga beli / unit" type="number" value={mHarga} onChange={(e) => setMHarga(e.target.value)} />
+        </div>
+        <Input label="Supplier" value={mSupplier} onChange={(e) => setMSupplier(e.target.value)} placeholder="mis. PT Sumber Baja" />
+        <p className="text-xs text-ink-muted">Stok barang akan bertambah otomatis setelah disimpan.</p>
+      </div>
+    </Modal>
+
+    {/* Modal opname / penyesuaian */}
+    <Modal
+      open={opnameOpen}
+      onClose={() => setOpnameOpen(false)}
+      title="Penyesuaian Stok (Opname)"
+      footer={
+        <>
+          <Button variant="outline" onClick={() => setOpnameOpen(false)}>Batal</Button>
+          <Button onClick={submitMasuk} loading={stokMasuk.isPending} disabled={!mBarang || !mQty}>
+            Simpan
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <BarangSelect barang={barang ?? []} value={oBarang} onChange={setOBarang} />
+        {barangTerpilihOpname && (
+          <div className="flex items-center justify-between rounded-md bg-surface-sunken px-3 py-2 text-sm">
+            <span className="text-ink-muted">Stok sistem saat ini</span>
+            <span className="num font-semibold">{angka(barangTerpilihOpname.stok)} {barangTerpilihOpname.satuan}</span>
+          </div>
+        )}
+        <Input label="Stok fisik (hasil hitung)" type="number" value={oFisik} onChange={(e) => setOFisik(e.target.value)} />
+        {barangTerpilihOpname && oFisik !== "" && (
+          <div className="flex items-center justify-between rounded-md border border-line px-3 py-2 text-sm">
+            <span className="text-ink-muted">Selisih</span>
+            <span className={selisih === 0 ? "num font-semibold" : selisih > 0 ? "num font-semibold text-ok" : "num font-semibold text-danger"}>
+              {selisih > 0 ? "+" : ""}{angka(selisih)}
+            </span>
+          </div>
+        )}
+        <Input label="Alasan" value={oAlasan} onChange={(e) => setOAlasan(e.target.value)} placeholder="mis. barang rusak / selisih hitung" />
+      </div>
+    </Modal>
+
+    <ConfirmDialog
+      open={konfirmasiOpname}
+      onClose={() => setKonfirmasiOpname(false)}
+      onConfirm={submitOpname}
+      title="Konfirmasi Penyesuaian Stok"
+      danger
+      loading={penyesuaian.isPending}
+      confirmLabel="Ya, Sesuaikan"
+      message={
+        <>
+          Stok <b>{barangTerpilihOpname?.nama}</b> akan diubah dengan selisih{" "}
+          <b>{selisih > 0 ? "+" : ""}{selisih}</b>. Lanjutkan?
+        </>
+      }
+    />
+  </div>
+)
 }
 
 function BarangSelect({
