@@ -142,15 +142,17 @@ transaksiRouter.get(
 		}
 		const where = conds.length ? `where ${conds.join(" and ")}` : ""
 		const rows = await query<any>(
-			`select t.id, t.no_transaksi, t.tanggal, t.total, t.metode_bayar, t.status,
-			        t.catatan, u.nama as kasir_nama
-			 from transaksi t
-			 left join users u on u.id = t.kasir_id
-			 ${where}
-			 order by t.tanggal desc
-			 limit 500`,
-			params,
-		)
+				`select t.id, t.no_transaksi, t.tanggal, t.total, t.metode_bayar, t.status,
+						t.catatan, u.nama as kasir_nama,
+						p.nominal as p_nominal, p.sisa as p_sisa, p.status as p_status
+				from transaksi t
+				left join users u on u.id = t.kasir_id
+				left join piutang p on p.transaksi_id = t.id
+				${where}
+				order by t.tanggal desc
+				limit 500`,
+				params,
+			)
 		res.json(
 			rows.map((t) => ({
 				id: t.id,
@@ -161,6 +163,10 @@ transaksiRouter.get(
 				status: t.status,
 				catatan: t.catatan,
 				kasir: t.kasir_nama ? { nama: t.kasir_nama } : null,
+				piutang:
+					t.p_nominal != null
+						? { nominal: num(t.p_nominal), sisa: num(t.p_sisa), status: t.p_status }
+						: null,
 			})),
 		)
 	}),

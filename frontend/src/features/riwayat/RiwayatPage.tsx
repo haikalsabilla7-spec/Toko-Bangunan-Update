@@ -105,9 +105,14 @@ export default function RiwayatPage() {
                       <td className="td text-sm text-ink-soft">{tanggalJam(t.tanggal)}</td>
                       <td className="td text-sm">{t.kasir?.nama ?? "-"}</td>
                       <td className="td">
-                        <Badge tone={t.metode_bayar === "utang" ? "warn" : "ok"}>
-                          {t.metode_bayar === "utang" ? "Utang" : "Tunai"}
-                        </Badge>
+                        <div className="flex flex-col items-start gap-1">
+                          <Badge tone={t.metode_bayar === "utang" ? "warn" : "ok"}>
+                            {t.metode_bayar === "utang" ? "Utang" : "Tunai"}
+                          </Badge>
+                          {t.metode_bayar === "utang" && t.piutang && (
+                            <StatusBayar piutang={t.piutang} />
+                          )}
+                        </div>
                       </td>
                       <td className="td num text-right font-semibold">{rupiah(t.total)}</td>
                       <td className="td text-right">
@@ -183,5 +188,30 @@ function NotaModal({ trx, onClose }: { trx: RiwayatRow; onClose: () => void }) {
         </div>
       )}
     </Modal>
+  )
+}
+
+function StatusBayar({ piutang }: { piutang: { nominal: number; sisa: number; status: string } }) {
+  const dibayar = Math.max(piutang.nominal - piutang.sisa, 0)
+  const lunas = piutang.sisa <= 0
+  const nyicil = !lunas && dibayar > 0
+  const pct = piutang.nominal > 0 ? Math.min(Math.round((dibayar / piutang.nominal) * 100), 100) : 0
+
+  return (
+    <div className="w-36">
+      <Badge tone={lunas ? "ok" : nyicil ? "warn" : "danger"}>
+        {lunas ? "Lunas" : nyicil ? `Nyicil ${pct}%` : "Belum dibayar"}
+      </Badge>
+      {!lunas && (
+        <>
+          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-line">
+            <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="mt-0.5 text-[11px] text-ink-muted">
+            Sisa {rupiah(piutang.sisa)} / {rupiah(piutang.nominal)}
+          </p>
+        </>
+      )}
+    </div>
   )
 }

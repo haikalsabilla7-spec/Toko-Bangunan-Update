@@ -10,6 +10,7 @@ export interface RiwayatRow {
 	status: string
 	catatan: string | null
 	kasir: { nama: string } | null
+	piutang: { nominal: number; sisa: number; status: string } | null
 }
 
 export interface RiwayatFilter {
