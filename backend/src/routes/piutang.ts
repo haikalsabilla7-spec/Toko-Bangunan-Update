@@ -15,9 +15,12 @@ piutangRouter.get(
 	authRequired,
 	asyncHandler(async (_req, res) => {
 		const rows = await query<any>(
-			`select id, transaksi_id, nama_pelanggan, nominal, sisa, tanggal, jatuh_tempo, status
-			 from piutang order by status asc, jatuh_tempo asc nulls last`,
-		)
+				`select p.id, p.transaksi_id, p.nama_pelanggan, p.nominal, p.sisa, p.tanggal,
+						p.jatuh_tempo, p.status, t.no_transaksi, t.catatan
+				from piutang p
+				left join transaksi t on t.id = p.transaksi_id
+				order by p.status asc, p.jatuh_tempo asc nulls last`,
+			)
 		res.json(rows.map(mapPiutang))
 	}),
 )
