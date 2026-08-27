@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/Input"
 import { InlineLoader } from "@/components/ui/Loader"
 import { EmptyState, ErrorState } from "@/components/ui/State"
 import { useToast } from "@/components/ui/Toast"
-import { rupiah, tanggal } from "@/lib/format"
+import { rupiah, tanggal, angka} from "@/lib/format"
 import type { Piutang } from "@/types/database"
 import { usePiutangList, usePembayaranPiutang, useCatatPembayaranPiutang } from "./api"
+import { useDetailTransaksi } from "@/features/riwayat/api"
 
 export default function PiutangPage() {
   const toast = useToast()
@@ -78,7 +79,12 @@ export default function PiutangPage() {
                 <tbody>
                   {filtered.map((p) => (
                     <tr key={p.id} className="hover:bg-surface-sunken">
-                      <td className="td font-medium">{p.nama_pelanggan}</td>
+                      <td className="td font-medium">
+                        {p.nama_pelanggan}
+                        {p.no_transaksi && (
+                          <span className="block text-xs font-normal text-ink-muted">{p.no_transaksi}</span>
+                        )}
+                      </td>
                       <td className="td text-sm text-ink-soft">{tanggal(p.tanggal)}</td>
                       <td className="td text-sm">
                         {p.jatuh_tempo ? (
@@ -120,6 +126,7 @@ function DetailPiutangModal({ piutang, onClose, onSaved }: { piutang: Piutang; o
   const toast = useToast()
   const riwayat = usePembayaranPiutang(piutang.id)
   const bayar = useCatatPembayaranPiutang()
+  const detailTrx = useDetailTransaksi(piutang.transaksi_id)
   const [nominal, setNominal] = useState("")
 
   async function submit() {
@@ -164,12 +171,52 @@ function DetailPiutangModal({ piutang, onClose, onSaved }: { piutang: Piutang; o
       }
     >
       <div className="space-y-4">
+        {piutang.no_transaksi && (
+          <div className="flex items-center justify-between rounded-md bg-surface-sunken px-3 py-2 text-sm">
+            <span className="text-ink-muted">No. Transaksi</span>
+            <span className="font-medium">{piutang.no_transaksi}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-2 text-sm">
           <Info label="Nominal awal" value={rupiah(piutang.nominal)} />
           <Info label="Sisa" value={rupiah(piutang.sisa)} strong />
           <Info label="Tanggal" value={tanggal(piutang.tanggal)} />
           <Info label="Jatuh tempo" value={piutang.jatuh_tempo ? tanggal(piutang.jatuh_tempo) : "-"} />
         </div>
+
+        {/* Rincian pesanan (barang yang dibeli) */}
+        <div>
+          <p className="mb-2 text-sm font-semibold">Rincian Pesanan</p>
+          {!piutang.transaksi_id ? (
+            <p className="text-sm text-ink-muted">Transaksi tidak tertaut.</p>
+          ) : detailTrx.isLoading ? (
+            <InlineLoader label="Memuat rincian..." />
+          ) : detailTrx.data && detailTrx.data.items.length > 0 ? (
+            <ul className="divide-y divide-line rounded-md border border-line">
+              {detailTrx.data.items.map((it) => (
+                <li key={it.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{it.barang?.nama ?? "(barang dihapus)"}</p>
+                    <p className="text-xs text-ink-muted">
+                      {angka(it.qty)} {it.barang?.satuan ?? ""} × {rupiah(it.harga_jual)}
+                    </p>
+                  </div>
+                  <span className="num shrink-0 font-medium">{rupiah(it.subtotal)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-ink-muted">Tidak ada rincian item.</p>
+          )}
+        </div>
+
+        {piutang.catatan && (
+          <div className="rounded-md border border-line px-3 py-2 text-sm">
+            <p className="text-xs text-ink-muted">Catatan transaksi</p>
+            <p className="whitespace-pre-wrap">{piutang.catatan}</p>
+          </div>
+        )}
 
         {piutang.status === "belum_lunas" && (
           <div className="space-y-2 rounded-md border border-line p-3">

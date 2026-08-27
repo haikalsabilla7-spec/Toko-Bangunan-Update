@@ -26,7 +26,7 @@ export default function KasirPage() {
   const [scanOpen, setScanOpen] = useState(false)
   const [bayarOpen, setBayarOpen] = useState(false)
   const [mencari, setMencari] = useState(false)
-  const [katAktif, setKatAktif] = useState<string>("")
+  const [katAktif, setKatAktif] = useState<string>("laris")
   const [batas, setBatas] = useState(24)
   const [aktifIdx, setAktifIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -184,9 +184,6 @@ export default function KasirPage() {
                     <Flame className="h-3.5 w-3.5" /> Laris
                   </ChipCat>
                 )}
-                <ChipCat active={katAktif === ""} onClick={() => setKatAktif("")}>
-                  Semua
-                </ChipCat>
                 {kategori?.map((k) => (
                   <ChipCat key={k.id} active={katAktif === k.id} onClick={() => setKatAktif(k.id)}>
                     {k.nama}

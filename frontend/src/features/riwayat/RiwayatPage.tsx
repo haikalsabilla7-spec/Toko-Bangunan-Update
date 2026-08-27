@@ -154,6 +154,7 @@ function NotaModal({ trx, onClose }: { trx: RiwayatRow; onClose: () => void }) {
         })),
         total: Number(trx.total),
         nama_pelanggan: data.nama_pelanggan,
+        catatan: trx.catatan,
       }
     : null
 
