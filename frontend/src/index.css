@@ -6,10 +6,12 @@
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
   }
   body {
     @apply bg-surface-sunken text-ink font-sans antialiased;
     font-feature-settings: "tnum" 1, "cv01" 1;
+    overscroll-behavior-y: none;
   }
   h1, h2, h3, h4, .font-grotesk {
     font-family: "Space Grotesk", system-ui, sans-serif;
