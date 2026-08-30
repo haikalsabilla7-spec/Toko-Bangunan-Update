@@ -15,6 +15,7 @@ const PiutangPage = lazy(() => import("@/features/piutang/PiutangPage"))
 const UtangPage = lazy(() => import("@/features/utang/UtangPage"))
 const LaporanPage = lazy(() => import("@/features/laporan/LaporanPage"))
 const NotFoundPage = lazy(() => import("@/components/NotFoundPage"))
+const PenggunaPage = lazy(() => import("@/features/pengguna/PenggunaPage"))
 
 function L(node: ReactNode) {
   return <Suspense fallback={<FullScreenLoader />}>{node}</Suspense>
@@ -44,6 +45,10 @@ export const router = createHashRouter([
       {
         path: "laporan",
         element: <RequirePemilik>{L(<LaporanPage />)}</RequirePemilik>,
+      },
+      {
+        path: "pengguna",
+        element: <RequirePemilik>{L(<PenggunaPage />)}</RequirePemilik>,
       },
       { path: "*", element: L(<NotFoundPage />) },
     ],

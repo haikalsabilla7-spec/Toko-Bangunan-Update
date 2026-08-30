@@ -7,6 +7,7 @@ import {
   HandCoins,
   ReceiptText,
   BarChart3,
+  Users,
   type LucideIcon,
 } from "lucide-react"
 
@@ -26,4 +27,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/piutang", label: "Piutang", icon: HandCoins },
   { to: "/utang", label: "Utang", icon: ReceiptText, pemilikOnly: true },
   { to: "/laporan", label: "Laporan", icon: BarChart3, pemilikOnly: true },
+  { to: "/pengguna", label: "Pengguna", icon: Users, pemilikOnly: true },
 ]
