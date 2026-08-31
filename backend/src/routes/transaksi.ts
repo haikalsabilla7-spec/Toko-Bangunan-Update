@@ -2,7 +2,7 @@ import { Router } from "express"
 import { z } from "zod"
 import { query, tx, num } from "../db"
 import { ApiError, asyncHandler } from "../lib/http"
-import { authRequired } from "../middleware/auth"
+import { authRequired, pemilikOnly } from "../middleware/auth"
 
 export const transaksiRouter = Router()
 
@@ -200,5 +200,58 @@ transaksiRouter.get(
 			})),
 			nama_pelanggan: piutang[0]?.nama_pelanggan ?? null,
 		})
+	}),
+)
+
+// ============================================================
+// HAPUS TRANSAKSI (khusus pemilik).
+// Menghapus transaksi = mengembalikan stok barang seperti sebelum transaksi,
+// serta menghapus piutang terkait (pembayaran ikut via cascade).
+// detail_transaksi ikut terhapus otomatis via ON DELETE CASCADE.
+// ============================================================
+
+// Hapus SEMUA transaksi sekaligus.
+transaksiRouter.delete(
+	"/",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (_req, res) => {
+		const dihapus = await tx(async (client) => {
+			await client.query(
+				`update barang b
+				   set stok = stok + agg.qty
+				 from (select barang_id, sum(qty) as qty from detail_transaksi group by barang_id) agg
+				 where b.id = agg.barang_id`,
+			)
+			const c = await client.query("select count(*)::int as c from transaksi")
+			await client.query("delete from piutang")
+			await client.query("delete from transaksi")
+			return c.rows[0].c as number
+		})
+		res.json({ ok: true, dihapus })
+	}),
+)
+
+// Hapus SATU transaksi.
+transaksiRouter.delete(
+	"/:id",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (req, res) => {
+		const id = req.params.id
+		await tx(async (client) => {
+			const ada = await client.query("select id from transaksi where id = $1 for update", [id])
+			if (!ada.rows[0]) throw new ApiError(404, "Transaksi tidak ditemukan")
+			await client.query(
+				`update barang b
+				   set stok = stok + agg.qty
+				 from (select barang_id, sum(qty) as qty from detail_transaksi where transaksi_id = $1 group by barang_id) agg
+				 where b.id = agg.barang_id`,
+				[id],
+			)
+			await client.query("delete from piutang where transaksi_id = $1", [id])
+			await client.query("delete from transaksi where id = $1", [id])
+		})
+		res.json({ ok: true })
 	}),
 )

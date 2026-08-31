@@ -2,7 +2,7 @@ import { Router } from "express"
 import { z } from "zod"
 import { query, tx, num } from "../db"
 import { ApiError, asyncHandler } from "../lib/http"
-import { authRequired } from "../middleware/auth"
+import { authRequired, pemilikOnly } from "../middleware/auth"
 
 export const piutangRouter = Router()
 
@@ -63,5 +63,31 @@ piutangRouter.post(
 			])
 		})
 		res.status(201).json({ ok: true })
+	}),
+)
+
+// Hapus SEMUA piutang (pembayaran_piutang ikut via cascade). Khusus pemilik.
+piutangRouter.delete(
+	"/",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (_req, res) => {
+		const c = await query<{ c: number }>("select count(*)::int as c from piutang")
+		await query("delete from piutang")
+		res.json({ ok: true, dihapus: c[0].c })
+	}),
+)
+
+// Hapus SATU piutang. Khusus pemilik.
+piutangRouter.delete(
+	"/:id",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (req, res) => {
+		const r = await query<{ id: string }>("delete from piutang where id = $1 returning id", [
+			req.params.id,
+		])
+		if (!r.length) throw new ApiError(404, "Piutang tidak ditemukan")
+		res.json({ ok: true })
 	}),
 )
