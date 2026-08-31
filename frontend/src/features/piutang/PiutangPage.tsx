@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { HandCoins, Search, CalendarClock } from "lucide-react"
+import { HandCoins, Search, CalendarClock, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/PageHeader"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -9,16 +9,28 @@ import { Input } from "@/components/ui/Input"
 import { InlineLoader } from "@/components/ui/Loader"
 import { EmptyState, ErrorState } from "@/components/ui/State"
 import { useToast } from "@/components/ui/Toast"
-import { rupiah, tanggal, angka} from "@/lib/format"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { useAuth } from "@/features/auth/AuthProvider"
+import { rupiah, tanggal } from "@/lib/format"
 import type { Piutang } from "@/types/database"
-import { usePiutangList, usePembayaranPiutang, useCatatPembayaranPiutang } from "./api"
-import { useDetailTransaksi } from "@/features/riwayat/api"
+import {
+  usePiutangList,
+  usePembayaranPiutang,
+  useCatatPembayaranPiutang,
+  useHapusPiutang,
+  useHapusSemuaPiutang,
+} from "./api"
 
 export default function PiutangPage() {
   const toast = useToast()
   const { data, isLoading, isError, refetch } = usePiutangList()
   const [q, setQ] = useState("")
   const [detail, setDetail] = useState<Piutang | null>(null)
+  const [hapusTarget, setHapusTarget] = useState<Piutang | null>(null)
+  const [hapusSemuaOpen, setHapusSemuaOpen] = useState(false)
+  const { isPemilik } = useAuth()
+  const hapus = useHapusPiutang()
+  const hapusSemua = useHapusSemuaPiutang()
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase()
@@ -37,7 +49,17 @@ export default function PiutangPage() {
 
   return (
     <div>
-      <PageHeader title="Piutang" description="Tagihan pelanggan dari transaksi utang." />
+      <PageHeader
+        title="Piutang"
+        description="Tagihan pelanggan dari transaksi utang."
+        actions={
+          isPemilik && (data ?? []).length > 0 ? (
+            <Button variant="danger" onClick={() => setHapusSemuaOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Hapus Semua
+            </Button>
+          ) : undefined
+        }
+      />
       <div className="space-y-3 p-4 sm:p-6">
         <div className="grid grid-cols-2 gap-3 sm:max-w-md">
           <div className="card p-4">
@@ -79,12 +101,7 @@ export default function PiutangPage() {
                 <tbody>
                   {filtered.map((p) => (
                     <tr key={p.id} className="hover:bg-surface-sunken">
-                      <td className="td font-medium">
-                        {p.nama_pelanggan}
-                        {p.no_transaksi && (
-                          <span className="block text-xs font-normal text-ink-muted">{p.no_transaksi}</span>
-                        )}
-                      </td>
+                      <td className="td font-medium">{p.nama_pelanggan}</td>
                       <td className="td text-sm text-ink-soft">{tanggal(p.tanggal)}</td>
                       <td className="td text-sm">
                         {p.jatuh_tempo ? (
@@ -104,9 +121,16 @@ export default function PiutangPage() {
                         </Badge>
                       </td>
                       <td className="td text-right">
-                        <Button size="sm" variant={p.status === "lunas" ? "ghost" : "outline"} onClick={() => setDetail(p)}>
-                          {p.status === "lunas" ? "Detail" : "Catat Bayar"}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button size="sm" variant={p.status === "lunas" ? "ghost" : "outline"} onClick={() => setDetail(p)}>
+                            {p.status === "lunas" ? "Detail" : "Catat Bayar"}
+                          </Button>
+                          {isPemilik && (
+                            <Button size="sm" variant="danger" title="Hapus piutang" onClick={() => setHapusTarget(p)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -118,6 +142,48 @@ export default function PiutangPage() {
       </div>
 
       {detail && <DetailPiutangModal piutang={detail} onClose={() => setDetail(null)} onSaved={() => toast("Pembayaran dicatat", "success")} />}
+
+      {hapusTarget && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus piutang?"
+          confirmLabel="Ya, Hapus"
+          loading={hapus.isPending}
+          message={`Piutang atas nama ${hapusTarget.nama_pelanggan} beserta riwayat pembayarannya akan dihapus permanen. Lanjutkan?`}
+          onClose={() => setHapusTarget(null)}
+          onConfirm={async () => {
+            try {
+              await hapus.mutateAsync(hapusTarget.id)
+              toast("Piutang dihapus", "success")
+              setHapusTarget(null)
+            } catch {
+              toast("Gagal menghapus piutang", "error")
+            }
+          }}
+        />
+      )}
+
+      {hapusSemuaOpen && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus SEMUA piutang?"
+          confirmLabel="Ya, Hapus Semua"
+          loading={hapusSemua.isPending}
+          message="Semua data piutang beserta riwayat pembayarannya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan."
+          onClose={() => setHapusSemuaOpen(false)}
+          onConfirm={async () => {
+            try {
+              await hapusSemua.mutateAsync()
+              toast("Semua piutang dihapus", "success")
+              setHapusSemuaOpen(false)
+            } catch {
+              toast("Gagal menghapus piutang", "error")
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -126,7 +192,6 @@ function DetailPiutangModal({ piutang, onClose, onSaved }: { piutang: Piutang; o
   const toast = useToast()
   const riwayat = usePembayaranPiutang(piutang.id)
   const bayar = useCatatPembayaranPiutang()
-  const detailTrx = useDetailTransaksi(piutang.transaksi_id)
   const [nominal, setNominal] = useState("")
 
   async function submit() {
@@ -171,52 +236,12 @@ function DetailPiutangModal({ piutang, onClose, onSaved }: { piutang: Piutang; o
       }
     >
       <div className="space-y-4">
-        {piutang.no_transaksi && (
-          <div className="flex items-center justify-between rounded-md bg-surface-sunken px-3 py-2 text-sm">
-            <span className="text-ink-muted">No. Transaksi</span>
-            <span className="font-medium">{piutang.no_transaksi}</span>
-          </div>
-        )}
-
         <div className="grid grid-cols-2 gap-2 text-sm">
           <Info label="Nominal awal" value={rupiah(piutang.nominal)} />
           <Info label="Sisa" value={rupiah(piutang.sisa)} strong />
           <Info label="Tanggal" value={tanggal(piutang.tanggal)} />
           <Info label="Jatuh tempo" value={piutang.jatuh_tempo ? tanggal(piutang.jatuh_tempo) : "-"} />
         </div>
-
-        {/* Rincian pesanan (barang yang dibeli) */}
-        <div>
-          <p className="mb-2 text-sm font-semibold">Rincian Pesanan</p>
-          {!piutang.transaksi_id ? (
-            <p className="text-sm text-ink-muted">Transaksi tidak tertaut.</p>
-          ) : detailTrx.isLoading ? (
-            <InlineLoader label="Memuat rincian..." />
-          ) : detailTrx.data && detailTrx.data.items.length > 0 ? (
-            <ul className="divide-y divide-line rounded-md border border-line">
-              {detailTrx.data.items.map((it) => (
-                <li key={it.id} className="flex items-start justify-between gap-2 px-3 py-2 text-sm">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{it.barang?.nama ?? "(barang dihapus)"}</p>
-                    <p className="text-xs text-ink-muted">
-                      {angka(it.qty)} {it.barang?.satuan ?? ""} × {rupiah(it.harga_jual)}
-                    </p>
-                  </div>
-                  <span className="num shrink-0 font-medium">{rupiah(it.subtotal)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-ink-muted">Tidak ada rincian item.</p>
-          )}
-        </div>
-
-        {piutang.catatan && (
-          <div className="rounded-md border border-line px-3 py-2 text-sm">
-            <p className="text-xs text-ink-muted">Catatan transaksi</p>
-            <p className="whitespace-pre-wrap">{piutang.catatan}</p>
-          </div>
-        )}
 
         {piutang.status === "belum_lunas" && (
           <div className="space-y-2 rounded-md border border-line p-3">

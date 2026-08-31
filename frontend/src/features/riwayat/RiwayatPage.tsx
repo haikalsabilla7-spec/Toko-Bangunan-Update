@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { History, Search, Receipt, Printer } from "lucide-react"
+import { History, Search, Receipt, Printer, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/PageHeader"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -8,8 +8,17 @@ import { Modal } from "@/components/ui/Modal"
 import { InlineLoader } from "@/components/ui/Loader"
 import { EmptyState, ErrorState } from "@/components/ui/State"
 import { StrukThermal, type StrukData } from "@/components/print/StrukThermal"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { useToast } from "@/components/ui/Toast"
+import { useAuth } from "@/features/auth/AuthProvider"
 import { rupiah, tanggalJam } from "@/lib/format"
-import { useRiwayatTransaksi, useDetailTransaksi, type RiwayatRow } from "./api"
+import {
+  useRiwayatTransaksi,
+  useDetailTransaksi,
+  useHapusTransaksi,
+  useHapusSemuaTransaksi,
+  type RiwayatRow,
+} from "./api"
 
 function isoDate(offsetDays = 0): string {
   const d = new Date()
@@ -22,6 +31,12 @@ export default function RiwayatPage() {
   const [sampai, setSampai] = useState(isoDate(0))
   const [q, setQ] = useState("")
   const [dipilih, setDipilih] = useState<RiwayatRow | null>(null)
+  const [hapusTarget, setHapusTarget] = useState<RiwayatRow | null>(null)
+  const [hapusSemuaOpen, setHapusSemuaOpen] = useState(false)
+  const { isPemilik } = useAuth()
+  const toast = useToast()
+  const hapus = useHapusTransaksi()
+  const hapusSemua = useHapusSemuaTransaksi()
 
   const { data, isLoading, isError, refetch } = useRiwayatTransaksi({ dari, sampai, q })
 
@@ -38,6 +53,13 @@ export default function RiwayatPage() {
       <PageHeader
         title="Riwayat Transaksi"
         description="Semua transaksi penjualan. Klik baris untuk melihat detail & cetak ulang nota."
+        actions={
+          isPemilik && (data ?? []).length > 0 ? (
+            <Button variant="danger" onClick={() => setHapusSemuaOpen(true)}>
+              <Trash2 className="h-4 w-4" /> Hapus Semua
+            </Button>
+          ) : undefined
+        }
       />
       <div className="space-y-3 p-4 sm:p-6">
         {/* Ringkasan */}
@@ -116,16 +138,31 @@ export default function RiwayatPage() {
                       </td>
                       <td className="td num text-right font-semibold">{rupiah(t.total)}</td>
                       <td className="td text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setDipilih(t)
-                          }}
-                        >
-                          <Receipt className="h-4 w-4" /> Nota
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDipilih(t)
+                            }}
+                          >
+                            <Receipt className="h-4 w-4" /> Nota
+                          </Button>
+                          {isPemilik && (
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              title="Hapus transaksi"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setHapusTarget(t)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -137,6 +174,48 @@ export default function RiwayatPage() {
       </div>
 
       {dipilih && <NotaModal trx={dipilih} onClose={() => setDipilih(null)} />}
+
+      {hapusTarget && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus transaksi?"
+          confirmLabel="Ya, Hapus"
+          loading={hapus.isPending}
+          message={`Transaksi ${hapusTarget.no_transaksi} akan dihapus permanen dan stok barangnya dikembalikan. Piutang terkait (jika ada) ikut terhapus. Lanjutkan?`}
+          onClose={() => setHapusTarget(null)}
+          onConfirm={async () => {
+            try {
+              await hapus.mutateAsync(hapusTarget.id)
+              toast("Transaksi dihapus, stok dikembalikan", "success")
+              setHapusTarget(null)
+            } catch {
+              toast("Gagal menghapus transaksi", "error")
+            }
+          }}
+        />
+      )}
+
+      {hapusSemuaOpen && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus SEMUA transaksi?"
+          confirmLabel="Ya, Hapus Semua"
+          loading={hapusSemua.isPending}
+          message="Semua transaksi akan dihapus permanen dan stok seluruh barang dikembalikan. Semua piutang ikut terhapus. Tindakan ini tidak bisa dibatalkan."
+          onClose={() => setHapusSemuaOpen(false)}
+          onConfirm={async () => {
+            try {
+              await hapusSemua.mutateAsync()
+              toast("Semua transaksi dihapus", "success")
+              setHapusSemuaOpen(false)
+            } catch {
+              toast("Gagal menghapus transaksi", "error")
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

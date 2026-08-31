@@ -25,3 +25,21 @@ export function useCatatPembayaranPiutang() {
 		onSuccess: () => qc.invalidateQueries({ queryKey: ["piutang"] }),
 	})
 }
+
+/** Hapus SATU piutang (pembayaran ikut terhapus). Khusus pemilik. */
+export function useHapusPiutang() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api.del(`/piutang/${id}`),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["piutang"] }),
+	})
+}
+
+/** Hapus SEMUA piutang sekaligus. Khusus pemilik. */
+export function useHapusSemuaPiutang() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api.del(`/piutang`),
+		onSuccess: () => qc.invalidateQueries({ queryKey: ["piutang"] }),
+	})
+}

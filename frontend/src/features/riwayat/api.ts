@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api, qs } from "@/lib/api"
 
 export interface RiwayatRow {
@@ -48,5 +48,33 @@ export function useDetailTransaksi(transaksiId: string | null) {
 		queryKey: ["riwayat", "detail", transaksiId ?? ""],
 		enabled: !!transaksiId,
 		queryFn: () => api.get<DetailTransaksiHasil>(`/transaksi/${transaksiId}/detail`),
+	})
+}
+
+/** Hapus SATU transaksi. Stok barang otomatis dikembalikan oleh server. Khusus pemilik. */
+export function useHapusTransaksi() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: (id: string) => api.del(`/transaksi/${id}`),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["riwayat"] })
+			qc.invalidateQueries({ queryKey: ["piutang"] })
+			qc.invalidateQueries({ queryKey: ["barang"] })
+			qc.invalidateQueries({ queryKey: ["dashboard"] })
+		},
+	})
+}
+
+/** Hapus SEMUA transaksi sekaligus. Stok seluruh barang dikembalikan. Khusus pemilik. */
+export function useHapusSemuaTransaksi() {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api.del(`/transaksi`),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["riwayat"] })
+			qc.invalidateQueries({ queryKey: ["piutang"] })
+			qc.invalidateQueries({ queryKey: ["barang"] })
+			qc.invalidateQueries({ queryKey: ["dashboard"] })
+		},
 	})
 }

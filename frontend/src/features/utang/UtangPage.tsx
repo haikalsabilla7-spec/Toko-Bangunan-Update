@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ReceiptText, Plus, CalendarClock } from "lucide-react"
+import { ReceiptText, Plus, CalendarClock, Trash2 } from "lucide-react"
 import { PageHeader } from "@/components/PageHeader"
 import { Button } from "@/components/ui/Button"
 import { Badge } from "@/components/ui/Badge"
@@ -9,9 +9,18 @@ import { Input } from "@/components/ui/Input"
 import { InlineLoader } from "@/components/ui/Loader"
 import { EmptyState, ErrorState } from "@/components/ui/State"
 import { useToast } from "@/components/ui/Toast"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { useAuth } from "@/features/auth/AuthProvider"
 import { rupiah, tanggal } from "@/lib/format"
 import type { Utang } from "@/types/database"
-import { useUtangList, useSimpanUtang, usePembayaranUtang, useCatatPembayaranUtang } from "./api"
+import {
+  useUtangList,
+  useSimpanUtang,
+  usePembayaranUtang,
+  useCatatPembayaranUtang,
+  useHapusUtang,
+  useHapusSemuaUtang,
+} from "./api"
 
 export default function UtangPage() {
   const toast = useToast()
@@ -19,6 +28,11 @@ export default function UtangPage() {
   const simpan = useSimpanUtang()
   const [tambahOpen, setTambahOpen] = useState(false)
   const [detail, setDetail] = useState<Utang | null>(null)
+  const [hapusTarget, setHapusTarget] = useState<Utang | null>(null)
+  const [hapusSemuaOpen, setHapusSemuaOpen] = useState(false)
+  const { isPemilik } = useAuth()
+  const hapus = useHapusUtang()
+  const hapusSemua = useHapusSemuaUtang()
 
   // form tambah
   const [supplier, setSupplier] = useState("")
@@ -57,9 +71,16 @@ export default function UtangPage() {
         title="Utang"
         description="Kewajiban toko kepada supplier."
         actions={
-          <Button onClick={() => setTambahOpen(true)}>
-            <Plus className="h-4 w-4" /> Catat Utang
-          </Button>
+          <div className="flex items-center gap-2">
+            {isPemilik && (data ?? []).length > 0 && (
+              <Button variant="danger" onClick={() => setHapusSemuaOpen(true)}>
+                <Trash2 className="h-4 w-4" /> Hapus Semua
+              </Button>
+            )}
+            <Button onClick={() => setTambahOpen(true)}>
+              <Plus className="h-4 w-4" /> Catat Utang
+            </Button>
+          </div>
         }
       />
       <div className="space-y-3 p-4 sm:p-6">
@@ -112,9 +133,16 @@ export default function UtangPage() {
                         </Badge>
                       </td>
                       <td className="td text-right">
-                        <Button size="sm" variant={u.status === "lunas" ? "ghost" : "outline"} onClick={() => setDetail(u)}>
-                          {u.status === "lunas" ? "Detail" : "Catat Bayar"}
-                        </Button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button size="sm" variant={u.status === "lunas" ? "ghost" : "outline"} onClick={() => setDetail(u)}>
+                            {u.status === "lunas" ? "Detail" : "Catat Bayar"}
+                          </Button>
+                          {isPemilik && (
+                            <Button size="sm" variant="danger" title="Hapus utang" onClick={() => setHapusTarget(u)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -145,6 +173,48 @@ export default function UtangPage() {
       </Modal>
 
       {detail && <DetailUtangModal utang={detail} onClose={() => setDetail(null)} />}
+
+      {hapusTarget && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus utang?"
+          confirmLabel="Ya, Hapus"
+          loading={hapus.isPending}
+          message={`Utang ke ${hapusTarget.supplier} beserta riwayat pembayarannya akan dihapus permanen. Lanjutkan?`}
+          onClose={() => setHapusTarget(null)}
+          onConfirm={async () => {
+            try {
+              await hapus.mutateAsync(hapusTarget.id)
+              toast("Utang dihapus", "success")
+              setHapusTarget(null)
+            } catch {
+              toast("Gagal menghapus utang", "error")
+            }
+          }}
+        />
+      )}
+
+      {hapusSemuaOpen && (
+        <ConfirmDialog
+          open
+          danger
+          title="Hapus SEMUA utang?"
+          confirmLabel="Ya, Hapus Semua"
+          loading={hapusSemua.isPending}
+          message="Semua data utang beserta riwayat pembayarannya akan dihapus permanen. Tindakan ini tidak bisa dibatalkan."
+          onClose={() => setHapusSemuaOpen(false)}
+          onConfirm={async () => {
+            try {
+              await hapusSemua.mutateAsync()
+              toast("Semua utang dihapus", "success")
+              setHapusSemuaOpen(false)
+            } catch {
+              toast("Gagal menghapus utang", "error")
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
