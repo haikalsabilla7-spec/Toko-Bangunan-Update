@@ -38,7 +38,10 @@ transaksiRouter.post(
 		const body = simpanSchema.parse(req.body)
 		const kasirId = req.user!.id
 
-		const result = await tx(async (client) => {
+				const result = await tx(async (client) => {
+			// Kunci supaya dua transaksi yang tersimpan bersamaan tidak berebut nomor yang sama.
+			await client.query("select pg_advisory_xact_lock(hashtext('no_transaksi'))")
+
 			const seqRes = await client.query(
 				"select count(*)::int as c from transaksi where tanggal::date = now()::date",
 			)
