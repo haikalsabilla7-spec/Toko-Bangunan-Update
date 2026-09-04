@@ -12,6 +12,7 @@ import { laporanRouter } from "./routes/laporan"
 import { stokRouter } from "./routes/stok"
 import { piutangRouter } from "./routes/piutang"
 import { utangRouter } from "./routes/utang"
+import { usersRouter } from "./routes/users"
 
 const app = express()
 
@@ -34,6 +35,7 @@ app.use("/laporan", laporanRouter)
 app.use("/stok", stokRouter)
 app.use("/piutang", piutangRouter)
 app.use("/utang", utangRouter)
+app.use("/users", usersRouter)
 
 // 404
 app.use((_req, res) => res.status(404).json({ error: "Endpoint tidak ditemukan" }))

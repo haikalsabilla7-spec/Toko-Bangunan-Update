@@ -11,5 +11,5 @@ export const TOKO = {
   // Catatan kaki struk (boleh multi-baris dipisah "|")
   footer:
     import.meta.env.VITE_TOKO_FOOTER ??
-    "Terima kasih telah berbelanja|Barang dapat ditukar maks. 1x24 jam|dengan struk asli",
+    "Terima kasih telah berbelanja",
 } as const

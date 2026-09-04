@@ -26,13 +26,21 @@ export default function KasirPage() {
   const [scanOpen, setScanOpen] = useState(false)
   const [bayarOpen, setBayarOpen] = useState(false)
   const [mencari, setMencari] = useState(false)
-  const [katAktif, setKatAktif] = useState<string>("")
+  const [katAktif, setKatAktif] = useState<string>("laris")
   const [batas, setBatas] = useState(24)
   const [aktifIdx, setAktifIdx] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
+  // Fokus ulang kolom scan HANYA di perangkat non-sentuh (mis. desktop + scanner),
+  // supaya keyboard di HP tidak muncul tiap kali menambah barang.
+  function fokusScan() {
+    if (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches) return
     inputRef.current?.focus()
+  }
+
+  // Auto-focus field scan agar scanner Bluetooth langsung tertangkap (desktop saja).
+  useEffect(() => {
+    fokusScan()
   }, [])
 
   useEffect(() => setBatas(24), [katAktif])
@@ -77,7 +85,7 @@ export default function KasirPage() {
       }
       cart.tambah(b)
       setQuery("")
-      inputRef.current?.focus()
+      fokusScan()
     } catch {
       toast("Gagal mencari barang", "error")
     } finally {
@@ -92,7 +100,7 @@ export default function KasirPage() {
     }
     cart.tambah(b)
     setQuery("")
-    inputRef.current?.focus()
+    fokusScan()
   }
 
   function onSubmitScan(e: React.FormEvent) {
@@ -176,9 +184,6 @@ export default function KasirPage() {
                     <Flame className="h-3.5 w-3.5" /> Laris
                   </ChipCat>
                 )}
-                <ChipCat active={katAktif === ""} onClick={() => setKatAktif("")}>
-                  Semua
-                </ChipCat>
                 {kategori?.map((k) => (
                   <ChipCat key={k.id} active={katAktif === k.id} onClick={() => setKatAktif(k.id)}>
                     {k.nama}
@@ -365,7 +370,7 @@ export default function KasirPage() {
             toast(`Transaksi ${hasil.no_transaksi} tersimpan`, "success")
             cart.kosongkan()
             setBayarOpen(false)
-            inputRef.current?.focus()
+            fokusScan()
             return hasil
           } catch (err) {
             toast(err instanceof Error ? err.message : "Gagal menyimpan transaksi", "error")

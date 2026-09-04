@@ -84,6 +84,7 @@ export function PembayaranModal({
       bayar: metode === "tunai" ? bayar : undefined,
       kembali: metode === "tunai" ? kembali : undefined,
       nama_pelanggan: metode === "utang" ? namaPelanggan : null,
+      catatan: catatan.trim() || null,
     })
   }
 

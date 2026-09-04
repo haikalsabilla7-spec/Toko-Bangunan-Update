@@ -86,6 +86,8 @@ export interface Piutang {
 	tanggal: string
 	jatuh_tempo: string | null
 	status: StatusPiutang
+	no_transaksi?: string | null
+	catatan?: string | null
 }
 
 export interface PembayaranPiutang {

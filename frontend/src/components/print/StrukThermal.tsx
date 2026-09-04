@@ -19,6 +19,7 @@ export interface StrukData {
   bayar?: number
   kembali?: number
   nama_pelanggan?: string | null
+  catatan?: string | null
 }
 
 /**
@@ -92,6 +93,14 @@ export function StrukThermal({ data }: { data: StrukData }) {
           <span>SISA UTANG</span>
           <span>{rupiah(data.total)}</span>
         </div>
+      )}
+
+      {data.catatan && (
+        <>
+          <Div />
+          <p className="text-black/70">Catatan:</p>
+          <p className="whitespace-pre-wrap">{data.catatan}</p>
+        </>
       )}
 
       <Div />

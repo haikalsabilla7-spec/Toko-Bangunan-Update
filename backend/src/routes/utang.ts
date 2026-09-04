@@ -88,3 +88,29 @@ utangRouter.post(
 		res.status(201).json({ ok: true })
 	}),
 )
+
+// Hapus SEMUA utang (pembayaran_utang ikut via cascade). Khusus pemilik.
+utangRouter.delete(
+	"/",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (_req, res) => {
+		const c = await query<{ c: number }>("select count(*)::int as c from utang")
+		await query("delete from utang")
+		res.json({ ok: true, dihapus: c[0].c })
+	}),
+)
+
+// Hapus SATU utang. Khusus pemilik.
+utangRouter.delete(
+	"/:id",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (req, res) => {
+		const r = await query<{ id: string }>("delete from utang where id = $1 returning id", [
+			req.params.id,
+		])
+		if (!r.length) throw new ApiError(404, "Utang tidak ditemukan")
+		res.json({ ok: true })
+	}),
+)

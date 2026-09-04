@@ -2,7 +2,7 @@ import { Router } from "express"
 import { z } from "zod"
 import { query, tx, num } from "../db"
 import { ApiError, asyncHandler } from "../lib/http"
-import { authRequired } from "../middleware/auth"
+import { authRequired, pemilikOnly } from "../middleware/auth"
 
 export const transaksiRouter = Router()
 
@@ -145,15 +145,17 @@ transaksiRouter.get(
 		}
 		const where = conds.length ? `where ${conds.join(" and ")}` : ""
 		const rows = await query<any>(
-			`select t.id, t.no_transaksi, t.tanggal, t.total, t.metode_bayar, t.status,
-			        t.catatan, u.nama as kasir_nama
-			 from transaksi t
-			 left join users u on u.id = t.kasir_id
-			 ${where}
-			 order by t.tanggal desc
-			 limit 500`,
-			params,
-		)
+				`select t.id, t.no_transaksi, t.tanggal, t.total, t.metode_bayar, t.status,
+						t.catatan, u.nama as kasir_nama,
+						p.nominal as p_nominal, p.sisa as p_sisa, p.status as p_status
+				from transaksi t
+				left join users u on u.id = t.kasir_id
+				left join piutang p on p.transaksi_id = t.id
+				${where}
+				order by t.tanggal desc
+				limit 500`,
+				params,
+			)
 		res.json(
 			rows.map((t) => ({
 				id: t.id,
@@ -164,6 +166,10 @@ transaksiRouter.get(
 				status: t.status,
 				catatan: t.catatan,
 				kasir: t.kasir_nama ? { nama: t.kasir_nama } : null,
+				piutang:
+					t.p_nominal != null
+						? { nominal: num(t.p_nominal), sisa: num(t.p_sisa), status: t.p_status }
+						: null,
 			})),
 		)
 	}),
@@ -197,5 +203,58 @@ transaksiRouter.get(
 			})),
 			nama_pelanggan: piutang[0]?.nama_pelanggan ?? null,
 		})
+	}),
+)
+
+// ============================================================
+// HAPUS TRANSAKSI (khusus pemilik).
+// Menghapus transaksi = mengembalikan stok barang seperti sebelum transaksi,
+// serta menghapus piutang terkait (pembayaran ikut via cascade).
+// detail_transaksi ikut terhapus otomatis via ON DELETE CASCADE.
+// ============================================================
+
+// Hapus SEMUA transaksi sekaligus.
+transaksiRouter.delete(
+	"/",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (_req, res) => {
+		const dihapus = await tx(async (client) => {
+			await client.query(
+				`update barang b
+				   set stok = stok + agg.qty
+				 from (select barang_id, sum(qty) as qty from detail_transaksi group by barang_id) agg
+				 where b.id = agg.barang_id`,
+			)
+			const c = await client.query("select count(*)::int as c from transaksi")
+			await client.query("delete from piutang")
+			await client.query("delete from transaksi")
+			return c.rows[0].c as number
+		})
+		res.json({ ok: true, dihapus })
+	}),
+)
+
+// Hapus SATU transaksi.
+transaksiRouter.delete(
+	"/:id",
+	authRequired,
+	pemilikOnly,
+	asyncHandler(async (req, res) => {
+		const id = req.params.id
+		await tx(async (client) => {
+			const ada = await client.query("select id from transaksi where id = $1 for update", [id])
+			if (!ada.rows[0]) throw new ApiError(404, "Transaksi tidak ditemukan")
+			await client.query(
+				`update barang b
+				   set stok = stok + agg.qty
+				 from (select barang_id, sum(qty) as qty from detail_transaksi where transaksi_id = $1 group by barang_id) agg
+				 where b.id = agg.barang_id`,
+				[id],
+			)
+			await client.query("delete from piutang where transaksi_id = $1", [id])
+			await client.query("delete from transaksi where id = $1", [id])
+		})
+		res.json({ ok: true })
 	}),
 )
