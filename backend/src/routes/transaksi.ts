@@ -43,7 +43,8 @@ transaksiRouter.post(
 			await client.query("select pg_advisory_xact_lock(hashtext('no_transaksi'))")
 
 			const seqRes = await client.query(
-				"select count(*)::int as c from transaksi where tanggal::date = now()::date",
+				`select coalesce(max(substring(no_transaksi from '\\d+$')::int), 0)::int as c
+				 from transaksi where tanggal::date = now()::date`,
 			)
 			const no = noTransaksiHariIni((seqRes.rows[0].c as number) + 1)
 			const status = body.metode_bayar === "utang" ? "belum_lunas" : "lunas"
