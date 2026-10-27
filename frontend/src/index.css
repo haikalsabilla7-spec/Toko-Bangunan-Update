@@ -79,14 +79,25 @@
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 48mm !important;
+    max-width: 48mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .print-area canvas,
   .print-area img { max-width: 100%; height: auto; }
   .no-print { display: none !important; }
 }
 
-/* Ukuran halaman cetak: ikuti konten + margin kecil agar tidak terpotong */
+/* Ukuran halaman cetak: ikuti konten tanpa margin agar tidak terpotong di tepi */
 @page {
-  size: auto;
-  margin: 4mm;
+  size: 58mm auto;
+  margin: 0;
 }

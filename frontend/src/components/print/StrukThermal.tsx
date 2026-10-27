@@ -23,17 +23,17 @@ export interface StrukData {
 }
 
 /**
- * Struk thermal 58mm. Lebar cetak efektif ~48mm.
+ * Struk thermal 58mm (lebar cetak efektif ~48mm).
  * Dibungkus .print-area agar hanya bagian ini yang tercetak (lihat index.css).
  */
 export function StrukThermal({ data }: { data: StrukData }) {
   const totalQty = data.items.reduce((s, i) => s + i.qty, 0)
   const footerLines = TOKO.footer.split("|")
   return (
-    <div className="print-area mx-auto w-[58mm] bg-white p-2 font-mono text-[10px] leading-tight text-black">
+    <div className="print-area mx-auto w-[48mm] max-w-[48mm] bg-white p-0 font-mono text-[9.5px] leading-tight text-black">
       {/* Kop toko */}
       <div className="text-center">
-        <p className="text-[13px] font-bold uppercase">{TOKO.nama}</p>
+        <p className="text-[12px] font-bold uppercase">{TOKO.nama}</p>
         <p>{TOKO.alamat}</p>
         <p>Telp {TOKO.telp}</p>
       </div>
@@ -51,12 +51,12 @@ export function StrukThermal({ data }: { data: StrukData }) {
       {/* Item */}
       {data.items.map((it, i) => (
         <div key={i} className="mb-1">
-          <p className="font-semibold">{it.nama}</p>
+          <p className="font-bold">{it.nama}</p>
           <div className="flex justify-between">
             <span>
               {angkaRingkas(it.qty)} {it.satuan} x {rupiah(it.harga_jual)}
             </span>
-            <span>{rupiah(it.subtotal)}</span>
+            <span className="font-semibold">{rupiah(it.subtotal)}</span>
           </div>
         </div>
       ))}
@@ -67,13 +67,13 @@ export function StrukThermal({ data }: { data: StrukData }) {
         <span>Total item</span>
         <span>{angkaRingkas(totalQty)}</span>
       </div>
-      <div className="flex justify-between text-[13px] font-bold">
+      <div className="flex justify-between text-[12px] font-bold">
         <span>TOTAL</span>
         <span>{rupiah(data.total)}</span>
       </div>
       <div className="mt-1 flex justify-between">
         <span>Metode</span>
-        <span className="uppercase">{data.metode_bayar}</span>
+        <span className="font-semibold uppercase">{data.metode_bayar}</span>
       </div>
 
       {data.metode_bayar === "tunai" && data.bayar != null && (
@@ -82,14 +82,14 @@ export function StrukThermal({ data }: { data: StrukData }) {
             <span>Bayar</span>
             <span>{rupiah(data.bayar)}</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between font-semibold">
             <span>Kembali</span>
             <span>{rupiah(data.kembali ?? 0)}</span>
           </div>
         </>
       )}
       {data.metode_bayar === "utang" && (
-        <div className="mt-1 flex justify-between font-semibold">
+        <div className="mt-1 flex justify-between font-bold">
           <span>SISA UTANG</span>
           <span>{rupiah(data.total)}</span>
         </div>
@@ -98,7 +98,7 @@ export function StrukThermal({ data }: { data: StrukData }) {
       {data.catatan && (
         <>
           <Div />
-          <p className="text-black/70">Catatan:</p>
+          <p className="font-medium text-black">Catatan:</p>
           <p className="whitespace-pre-wrap">{data.catatan}</p>
         </>
       )}
@@ -107,16 +107,16 @@ export function StrukThermal({ data }: { data: StrukData }) {
       {footerLines.map((l: string, i: number) => (
         <p key={i} className="text-center">{l}</p>
       ))}
-      <p className="mt-1 text-center text-[9px]">-- Struk ini bukti pembayaran sah --</p>
+      <p className="mt-1 text-center text-[8.5px]">-- Struk ini bukti pembayaran sah --</p>
     </div>
   )
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-2">
-      <span className="shrink-0 text-black/70">{label}</span>
-      <span className="text-right">{value}</span>
+    <div className="flex justify-between gap-1">
+      <span className="shrink-0 font-medium text-black">{label}</span>
+      <span className="text-right font-medium text-black">{value}</span>
     </div>
   )
 }

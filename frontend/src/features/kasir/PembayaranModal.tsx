@@ -61,28 +61,32 @@ export function PembayaranModal({
     .slice(0, 3)
 
   async function handleConfirm() {
+    const itemsSnapshot = [...items]
+    const totalSnapshot = total
+    const bayarSnapshot = bayar
+    const kembaliSnapshot = kembali
     const hasil = await onConfirm({
       metode_bayar: metode,
       catatan: catatan.trim() || null,
       nama_pelanggan: metode === "utang" ? namaPelanggan.trim() || "Pelanggan" : null,
       jatuh_tempo: metode === "utang" ? jatuhTempo || null : null,
     })
-    // Siapkan data struk lalu cetak
+    // Siapkan data struk lalu tampilkan pop up cetak struk
     setStruk({
       no_transaksi: hasil.no_transaksi,
       tanggal: hasil.tanggal,
       kasir: kasirNama,
       metode_bayar: metode,
-      items: items.map((i) => ({
+      items: itemsSnapshot.map((i) => ({
         nama: i.nama,
         qty: i.qty,
         satuan: i.satuan,
         harga_jual: i.harga_jual,
         subtotal: i.qty * i.harga_jual,
       })),
-      total,
-      bayar: metode === "tunai" ? bayar : undefined,
-      kembali: metode === "tunai" ? kembali : undefined,
+      total: totalSnapshot,
+      bayar: metode === "tunai" ? bayarSnapshot : undefined,
+      kembali: metode === "tunai" ? kembaliSnapshot : undefined,
       nama_pelanggan: metode === "utang" ? namaPelanggan : null,
       catatan: catatan.trim() || null,
     })
@@ -90,7 +94,7 @@ export function PembayaranModal({
 
   const valid = metode === "tunai" ? bayar >= total : namaPelanggan.trim().length > 0
 
-  // Tampilan struk setelah tersimpan
+  // Tampilan struk setelah tersimpan (Pop up pilihan cetak atau selesai)
   if (struk) {
     return (
       <Modal
@@ -100,15 +104,22 @@ export function PembayaranModal({
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={onClose}>Selesai</Button>
-            <Button onClick={() => window.print()}>
+            <Button variant="outline" onClick={onClose}>
+              Selesai (Tanpa Cetak)
+            </Button>
+            <Button onClick={() => window.print()} autoFocus>
               <Printer className="h-4 w-4" /> Cetak Struk
             </Button>
           </>
         }
       >
-        <div className="rounded-md border border-line bg-surface-sunken p-2">
-          <StrukThermal data={struk} />
+        <div className="space-y-3">
+          <div className="rounded-md bg-ok-soft p-3 text-center text-sm font-semibold text-ok">
+            Transaksi {struk.no_transaksi} berhasil disimpan!
+          </div>
+          <div className="rounded-md border border-line bg-surface-sunken p-2">
+            <StrukThermal data={struk} />
+          </div>
         </div>
       </Modal>
     )

@@ -347,7 +347,10 @@ export default function KasirPage() {
 
       <PembayaranModal
         open={bayarOpen}
-        onClose={() => setBayarOpen(false)}
+        onClose={() => {
+          setBayarOpen(false)
+          fokusScan()
+        }}
         items={cart.items}
         total={cart.total}
         kasirNama={profil?.nama ?? "Kasir"}
@@ -369,8 +372,7 @@ export default function KasirPage() {
             })
             toast(`Transaksi ${hasil.no_transaksi} tersimpan`, "success")
             cart.kosongkan()
-            setBayarOpen(false)
-            fokusScan()
+            
             return hasil
           } catch (err) {
             toast(err instanceof Error ? err.message : "Gagal menyimpan transaksi", "error")
