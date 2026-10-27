@@ -50,6 +50,7 @@ export default function RiwayatPage() {
 
   return (
     <div>
+      <div className="no-print">
       <PageHeader
         title="Riwayat Transaksi"
         description="Semua transaksi penjualan. Klik baris untuk melihat detail & cetak ulang nota."
@@ -171,6 +172,7 @@ export default function RiwayatPage() {
             </div>
           )}
         </Card>
+      </div>
       </div>
 
       {dipilih && <NotaModal trx={dipilih} onClose={() => setDipilih(null)} />}
