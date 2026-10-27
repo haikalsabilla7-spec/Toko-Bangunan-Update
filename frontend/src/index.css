@@ -77,38 +77,42 @@
 
 /* Struk thermal 58mm & label barcode: styling khusus cetak */
 @media print {
-  /* Hilangkan layout aplikasi & background agar tidak memicu 2 halaman / duplikat */
-  aside, header, nav, .no-print {
+  /* 1. Hilangkan elemen navigasi, header, footer modal, dan semua elemen berkelas no-print */
+  aside,
+  header,
+  nav,
+  .no-print {
     display: none !important;
   }
 
-  html, body, #root {
+  /* 2. Kunci halaman agar HANYA 1 HALAMAN (anti halaman 2 kosong) */
+  html,
+  body {
     height: auto !important;
     min-height: 0 !important;
-    overflow: visible !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
+  }
+
+  #root,
+  .h-screen,
+  .min-h-screen {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   body * {
     visibility: hidden;
   }
 
-  /* Netralkan modal fixed agar tidak berulang di setiap halaman */
-  .fixed {
-    position: static !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .print-area, .print-area * {
+  /* 3. Tampilkan hanya print-area */
+  .print-area,
+  .print-area * {
     visibility: visible !important;
   }
 
@@ -123,18 +127,23 @@
     color: #000 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
     page-break-inside: avoid !important;
     break-after: avoid !important;
-    page-break-after: avoid !important;
+    break-before: avoid !important;
+    break-inside: avoid !important;
   }
 
   .print-area canvas,
-  .print-area img { max-width: 100%; height: auto; }
+  .print-area img {
+    max-width: 100%;
+    height: auto;
+  }
 }
 
 /* Ukuran halaman cetak: ikuti konten tanpa margin agar tidak terpotong di tepi */
 @page {
-  size: 58mm auto;
+  size: auto;
   margin: 0;
 }
