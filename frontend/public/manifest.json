@@ -1,0 +1,32 @@
+{
+  "name": "Toko Bangunan Jaya Raya",
+  "short_name": "Kasir Toko",
+  "description": "Sistem Kasir & Stok Toko Bangunan Jaya Raya",
+  "start_url": "/#/",
+  "id": "/#/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#171717",
+  "theme_color": "#ea580c",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
